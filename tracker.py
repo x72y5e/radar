@@ -64,7 +64,7 @@ def display_to_console(current_ac: Dict[str, Plane]) -> None:
         print()
 
 
-def tracker(lat: float, long: float, r: float = 25.) -> None:
+def track(lat: float, long: float, r: float = 25.) -> None:
     url = "http://public-api.adsbexchange.com/VirtualRadar/AircraftList.json?lat={}&lng={}&fDstL=0&fDstU={}".format(
         lat, long, r)
     current_ac = {}
@@ -106,4 +106,4 @@ def tracker(lat: float, long: float, r: float = 25.) -> None:
 
 if __name__ == '__main__':
     coords = (51.47, -0.45)
-    tracker(coords[0], coords[1], 22.)
+    track(coords[0], coords[1], 22.)
