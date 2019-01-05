@@ -101,7 +101,7 @@ def track(lat: float, long: float, r: float = 25.) -> None:
         grid = make_grid(current_ac, grid)
         plot(grid)
         log(current_ac)
-        time.sleep(4)
+        time.sleep(3)
 
 
 if __name__ == '__main__':
