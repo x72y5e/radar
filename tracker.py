@@ -112,7 +112,7 @@ def track(lat: float, long: float,
         grid = make_grid(current_ac, grid, lat_min, lat_max, long_min, long_max)
         plot(grid)
         log(current_ac)
-        time.sleep(4)
+        time.sleep(3)
 
 
 if __name__ == '__main__':
