@@ -31,9 +31,8 @@ def log(planes: Dict[str, Plane]):
         f.write(t + " - " + " - ".join(data) + "\n")
 
 
-def make_grid(planes: Dict[str, Plane], grid: np.ndarray) -> np.ndarray:
-    x_low, x_high = 53.28, 53.54
-    y_low, y_high = -2.45, -2.06
+def make_grid(planes: Dict[str, Plane], grid: np.ndarray,
+              x_low, x_high, y_low, y_high) -> np.ndarray:
     grid[:, :, 2] /= 1.8
     grid[grid[:, :, 2] < .1] = 0.
     for plane in planes.values():
@@ -64,7 +63,19 @@ def display_to_console(current_ac: Dict[str, Plane]) -> None:
         print()
 
 
-def track(lat: float, long: float, r: float = 25.) -> None:
+def track(lat: float, long: float,
+          lat_min: float, lat_max: float, long_min: float, long_max: float,
+          r: float = 25.):
+    """
+    :param lat: latitude of centre of tracking space
+    :param long: longitude of centre of tracking space
+    :param r: range (km) of tracking, from centre
+    :param lat_min: minimum latitude to use for display grid
+    :param lat_max: maximum latitude to use for display grid
+    :param long_min: minimum longitude to use for display grid
+    :param long_max: maximum longitude to use for display grid
+    :return: None
+    """
     url = "http://public-api.adsbexchange.com/VirtualRadar/AircraftList.json?lat={}&lng={}&fDstL=0&fDstU={}".format(
         lat, long, r)
     current_ac = {}
@@ -98,12 +109,13 @@ def track(lat: float, long: float, r: float = 25.) -> None:
 
         display_to_console(current_ac)
         current_ac = purge(current_ac)
-        grid = make_grid(current_ac, grid)
+        grid = make_grid(current_ac, grid, lat_min, lat_max, long_min, long_max)
         plot(grid)
         log(current_ac)
         time.sleep(4)
 
 
 if __name__ == '__main__':
-    coords = (51.47, -0.45)
-    track(coords[0], coords[1], 22.)
+    home_coords = (51.47, -0.45)
+    screen_coords = (51.41, 51.53, -.7, -.24)
+    track(*home_coords, *screen_coords, 18.)
