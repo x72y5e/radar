@@ -26,7 +26,7 @@ def plot(grid: np.ndarray):
 
 def log(planes: Dict[str, Plane]):
     t = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
-    data = [" ".join((str(p.Lat), str(p.Long), str(p.colour))) for p in planes.values()]
+    data = [" ".join((str(p.kLat), str(p.kLong), str(p.colour))) for p in planes.values()]
     with open("log.txt", "a") as f:
         f.write(t + " - " + " - ".join(data) + "\n")
 
@@ -36,7 +36,7 @@ def make_grid(planes: Dict[str, Plane], grid: np.ndarray,
     grid[:, :, 2] /= 1.8
     grid[grid[:, :, 2] < .1] = 0.
     for plane in planes.values():
-        lat, long = plane.Lat, plane.Long
+        lat, long = plane.kLat, plane.kLong
         h, s = plane.colour
         if not (x_low < lat < x_high and y_low < long < y_high):
             continue
@@ -80,7 +80,7 @@ def track(lat: float, long: float,
         lat, long, r)
     current_ac = {}
     # add fixed point(s)
-    home = Plane("home", {"Lat": lat, "Long": long,
+    home = Plane("home", {"Lat": lat, "Long": long, "kLat": lat, "kLong": long,
                           "Type": "static"})
 
     current_ac["home"] = home
