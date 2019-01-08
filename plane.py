@@ -1,23 +1,22 @@
 import time
-import numpy as np
-from collections import deque
 from typing import Dict
+from kalman import KalmanFilter
 
 
 class Plane(object):
 
-    def __init__(self, reg: str, attr: Dict) -> None:
+    def __init__(self, reg: str, attr: Dict):
         self.Reg = reg
         self.__dict__.update(attr)
-        self.track = deque([], maxlen=5)
         self.last_seen = time.time()
         self.set_colour()
+        self.kalman_filter = KalmanFilter(1e-4, .04**2) # measured .04 stddev
 
     def set_colour(self):
         if self.Type.startswith("A38"):
             self.colour = (0., .99)
         elif self.Type.startswith("B74"):
-            self.colour = (0., .99)
+            self.colour = (.1, .95)
         elif self.Type.startswith("B77"):
             self.colour = (.63, .99)
         elif self.Type.startswith("B78"):
@@ -37,21 +36,19 @@ class Plane(object):
         else:
             self.colour = (.15, .3)
 
-    def update_fields(self, ac: Dict) -> None:
-        ac = {k: v for k, v in ac.items() if not v is None}
+    def update_fields(self, ac: Dict):
+        ac = {k: v for k, v in ac.items() if v is not None}
         self.__dict__.update(ac)
-        # resets lat and long to most recently reported position
-        if self.Lat and self.Long:
-            # stores most recently reported position
-            self.track.append((self.Lat, self.Long))
-        if len(self.track) > 1:
-            # resets lat and long to average of recent values
-            self.Lat = np.mean([pos[0] for pos in self.track])
-            self.Long = np.mean([pos[1] for pos in self.track])
+        self.apply_k_filter()
         self.last_seen = time.time()
+
+    def apply_k_filter(self):
+        self.kalman_filter.input_measurement((self.Lat, self.Long))
+        self.kLat, self.kLong = self.kalman_filter.get_estimated_position()
 
     @staticmethod
     def extract_data(ac: Dict) -> Dict:
         keys = ("Lat", "Long", "From", "To", "Type", "Alt")
         data = {k: ac.get(k) for k in keys}
+        data["kLat"], data["kLong"] = ac.get("Lat"), ac.get("Long")
         return data
