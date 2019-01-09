@@ -36,7 +36,7 @@ def make_grid(planes: Dict[str, Plane], grid: np.ndarray,
     grid[:, :, 2] /= 1.8
     grid[grid[:, :, 2] < .1] = 0.
     for plane in planes.values():
-        lat, long = plane.kLat, plane.kLong
+        lat, long = plane.Lat, plane.Long
         h, s = plane.colour
         if not (x_low < lat < x_high and y_low < long < y_high):
             continue

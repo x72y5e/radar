@@ -1,5 +1,7 @@
 import time
 from typing import Dict
+from collections import deque
+import numpy as np
 from kalman import KalmanFilter
 
 
@@ -10,7 +12,8 @@ class Plane(object):
         self.__dict__.update(attr)
         self.last_seen = time.time()
         self.set_colour()
-        self.kalman_filter = KalmanFilter(1e-4, .04**2) # measured .04 stddev
+        self.track = deque([], maxlen=3)
+        #self.kalman_filter = KalmanFilter(1e-4, .04**2) # measured .04 stddev
 
     def set_colour(self):
         if self.Type.startswith("A38"):
@@ -39,7 +42,10 @@ class Plane(object):
     def update_fields(self, ac: Dict):
         ac = {k: v for k, v in ac.items() if v is not None}
         self.__dict__.update(ac)
-        self.apply_k_filter()
+        #self.apply_k_filter()
+        self.track.append((self.Lat, self.Long))
+        self.Lat = np.mean([coord[0] for coord in self.track])
+        self.Long = np.mean([coord[1] for coord in self.track])
         self.last_seen = time.time()
 
     def apply_k_filter(self):
@@ -50,5 +56,5 @@ class Plane(object):
     def extract_data(ac: Dict) -> Dict:
         keys = ("Lat", "Long", "From", "To", "Type", "Alt")
         data = {k: ac.get(k) for k in keys}
-        data["kLat"], data["kLong"] = ac.get("Lat"), ac.get("Long")
+        #data["kLat"], data["kLong"] = ac.get("Lat"), ac.get("Long")
         return data

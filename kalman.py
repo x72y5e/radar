@@ -9,13 +9,14 @@ DIMS = (400, 400)
 class Point:
 
     def __init__(self):
-        self.x = DIMS[0] - 5.
-        self.y = 5.
+        self.x = DIMS[0] - 20.
+        self.y = 20.
         self.dx = -1.
         self.dy = 1.
 
     def get_position(self):
-        x, y = self.x + self.dx + np.random.randn() * 4, self.y + self.dy + np.random.randn() * 4
+        x, y = (max(0, min(DIMS[0], self.x + self.dx + np.random.randn() * 8)),
+               max(0, min(DIMS[1], self.y + self.dy + np.random.randn() * 8)))
         self.x = self.x + self.dx
         self.y = self.y + self.dy
         return (x, y)
