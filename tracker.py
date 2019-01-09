@@ -26,7 +26,7 @@ def plot(grid: np.ndarray):
 
 def log(planes: Dict[str, Plane]):
     t = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
-    data = [" ".join((str(p.kLat), str(p.kLong), str(p.colour))) for p in planes.values()]
+    data = [" ".join((str(p.Lat), str(p.Long), str(p.colour))) for p in planes.values()]
     with open("log.txt", "a") as f:
         f.write(t + " - " + " - ".join(data) + "\n")
 
