@@ -12,7 +12,8 @@ class Plane(object):
         self.__dict__.update(attr)
         self.last_seen = time.time()
         self.set_colour()
-        self.track = deque([], maxlen=3)
+        self.reported_track = deque([], maxlen=3) # used to calculate position
+        self.track = deque([], maxlen=3) # used to store track
         #self.kalman_filter = KalmanFilter(1e-4, .04**2) # measured .04 stddev
 
     def set_colour(self):
@@ -43,9 +44,10 @@ class Plane(object):
         ac = {k: v for k, v in ac.items() if v is not None}
         self.__dict__.update(ac)
         #self.apply_k_filter()
+        self.reported_track.append((self.Lat, self.Long))
+        self.Lat = np.mean([coord[0] for coord in self.reported_track])
+        self.Long = np.mean([coord[1] for coord in self.reported_track])
         self.track.append((self.Lat, self.Long))
-        self.Lat = np.mean([coord[0] for coord in self.track])
-        self.Long = np.mean([coord[1] for coord in self.track])
         self.last_seen = time.time()
 
     def apply_k_filter(self):
@@ -54,7 +56,7 @@ class Plane(object):
 
     @staticmethod
     def extract_data(ac: Dict) -> Dict:
-        keys = ("Lat", "Long", "From", "To", "Type", "Alt")
+        keys = ("Lat", "Long", "From", "To", "Type", "Alt", "Mdl", "Op")
         data = {k: ac.get(k) for k in keys}
         #data["kLat"], data["kLong"] = ac.get("Lat"), ac.get("Long")
         return data

@@ -3,7 +3,8 @@ import json
 import time
 from datetime import datetime
 import numpy as np
-from typing import Dict
+from typing import Dict, List, Tuple
+import sys
 from plane import Plane
 
 
@@ -31,18 +32,27 @@ def log(planes: Dict[str, Plane]):
         f.write(t + " - " + " - ".join(data) + "\n")
 
 
-def make_grid(planes: Dict[str, Plane], grid: np.ndarray,
+def make_grid(planes: Dict[str, Plane],
               x_low, x_high, y_low, y_high) -> np.ndarray:
-    grid[:, :, 2] /= 1.8
-    grid[grid[:, :, 2] < .1] = 0.
+    grid = np.zeros((16, 16, 3), dtype=np.float32)
     for plane in planes.values():
-        lat, long = plane.Lat, plane.Long
         h, s = plane.colour
-        if not (x_low < lat < x_high and y_low < long < y_high):
-            continue
-        lat = int(((lat - x_low) / (x_high - x_low)) * -16. + 16)
-        long = int(((long - y_low) / (y_high - y_low)) * 16.)
-        grid[lat, long] = (h, s, 1.) if plane.Type != "static" else (h, s, 0.1)
+        if plane.Type == "static":
+            x = int(((plane.Lat - x_low) / (x_high - x_low)) * -16. + 16)
+            y = int(((plane.Long - y_low) / (y_high - y_low)) * 16.)
+            grid[x, y] = (h, s, .1)
+        b = 1.
+        alt = int(plane.Alt) if plane.Alt is not None else 100
+        for x, y in reversed(plane.track):
+            if (x_low < x < x_high
+                and y_low < y < y_high
+                and alt > 50):
+                x = int(((x - x_low) / (x_high - x_low)) * -16. + 16)
+                y = int(((y - y_low) / (y_high - y_low)) * 16.)
+                # get current brightness of pixel to avoid overwriting
+                current_b = grid[x, y, 2]
+                grid[x, y] = (h, s, max(current_b, b)) if plane.Type != "static" else (h, s, 0.1)
+            b /= 2.
     return grid
 
 
@@ -57,18 +67,18 @@ def display_to_console(current_ac: Dict[str, Plane]) -> None:
     for p in [p for p in current_ac.values() if p.Type != "static"]:
         print("From:", p.From)
         print("To:", p.To)
-        print("Type:", p.Type)
+        print("Type:", p.Mdl) #p.Type)
+        print("Operator:", p.Op)
         print("Altitude:", p.Alt)
         print("Last Info:", round(time.time() - p.last_seen, 2), "seconds ago")
         print()
 
 
-def track(lat: float, long: float,
+def track(fixed_points: List[Tuple[float, float]],
           lat_min: float, lat_max: float, long_min: float, long_max: float,
           r: float = 25.):
     """
-    :param lat: latitude of centre of tracking space
-    :param long: longitude of centre of tracking space
+    :param fixed_points: list of fixed points to display. first item is tracking centre
     :param r: range (km) of tracking, from centre
     :param lat_min: minimum latitude to use for display grid
     :param lat_max: maximum latitude to use for display grid
@@ -76,15 +86,17 @@ def track(lat: float, long: float,
     :param long_max: maximum longitude to use for display grid
     :return: None
     """
+    lat, long = fixed_points[0]
+    print("getting data...")
     url = "http://public-api.adsbexchange.com/VirtualRadar/AircraftList.json?lat={}&lng={}&fDstL=0&fDstU={}".format(
         lat, long, r)
     current_ac = {}
     # add fixed point(s)
-    home = Plane("home", {"Lat": lat, "Long": long, "kLat": lat, "kLong": long,
-                          "Type": "static"})
-
-    current_ac["home"] = home
-    grid = np.zeros((16, 16, 3))
+    for i, (x, y) in enumerate(fixed_points):
+        current_ac["fixed" + str(i)] = Plane("fixed" + str(i),
+                                            {"Lat": x, "Long": y,
+                                             "kLat": x, "kLong": y, # for k_filter
+                                             "Alt": 0, "Type": "static"})
 
     while True:
         try:
@@ -109,13 +121,39 @@ def track(lat: float, long: float,
 
         display_to_console(current_ac)
         current_ac = purge(current_ac)
-        grid = make_grid(current_ac, grid, lat_min, lat_max, long_min, long_max)
+        grid = make_grid(current_ac, lat_min, lat_max, long_min, long_max)
         plot(grid)
         log(current_ac)
-        time.sleep(3)
+        time.sleep(2)
 
 
 if __name__ == '__main__':
-    home_coords = (51.47, -0.45)
-    screen_coords = (51.41, 51.53, -.7, -.24)
-    track(*home_coords, *screen_coords, 18.)
+    bleft = input("enter coordinate (in format lat, long) for bottom-left of the map: (or press enter for default) ")
+    tright = input("enter coordinate (in format lat, long) for top-right of the map: (or press enter for default)")
+    fixed = []
+    while True:
+        fp = input("enter coordinates (in format lat, long) for any fixed point, or press enter to continue: ")
+        if fp:
+            fixed.append([float(x) for x in fp.split(",")])
+        else:
+            break
+
+    if bleft and tright:
+        try:
+            x_low, y_low = [float(x) for x in bleft.split(",")]
+            x_high, y_high = [float(x) for x in tright.split(",")]
+        except Exception as e:
+            print("wrong format.\n", e)
+            sys.exit(1)
+    else:
+        x_low, x_high, y_low, y_high = 51.41, 51.53, -.7, -.24
+
+    if not fixed:
+        fixed = [(51.47, -0.45)]
+
+    # check data is valid
+    if not (x_low < x_high and y_low < y_high):
+        print("invalid coordinates.")
+        sys.exit(1)
+
+    track(fixed, x_low, x_high, y_low, y_high, 18.)
