@@ -88,7 +88,7 @@ def track(fixed_points: List[Tuple[float, float]],
     """
     lat, long = fixed_points[0]
     print("getting data...")
-    url = "http://public-api.adsbexchange.com/VirtualRadar/AircraftList.json?lat={}&lng={}&fDstL=0&fDstU={}".format(
+    url = "https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json?lat={}&lng={}&fDstL=0&fDstU={}".format(
         lat, long, r)
     current_ac = {}
     # add fixed point(s)
