@@ -74,7 +74,7 @@ def display_to_console(current_ac: Dict[str, Plane]) -> None:
         print()
 
 
-def track(fixed_points: List[Tuple[float, float]],
+def track(fixed_points: List[List[float, float]],
           lat_min: float, lat_max: float, long_min: float, long_max: float,
           r: float = 25.):
     """
@@ -86,7 +86,7 @@ def track(fixed_points: List[Tuple[float, float]],
     :param long_max: maximum longitude to use for display grid
     :return: None
     """
-    lat, long = fixed_points[0]
+    lat, long = (x_high - x_low) / 2, (y_high - y_low) / 2
     print("getting data...")
     url = "https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json?lat={}&lng={}&fDstL=0&fDstU={}".format(
         lat, long, r)
@@ -127,9 +127,10 @@ def track(fixed_points: List[Tuple[float, float]],
         time.sleep(2)
 
 
-if __name__ == '__main__':
+def command_line_dialogue():
     bleft = input("enter coordinate (in format lat, long) for bottom-left of the map: (or press enter for default) ")
     tright = input("enter coordinate (in format lat, long) for top-right of the map: (or press enter for default)")
+
     fixed = []
     while True:
         fp = input("enter coordinates (in format lat, long) for any fixed point, or press enter to continue: ")
@@ -148,12 +149,13 @@ if __name__ == '__main__':
     else:
         x_low, x_high, y_low, y_high = 51.41, 51.53, -.7, -.24
 
-    if not fixed:
-        fixed = [(51.47, -0.45)]
-
     # check data is valid
     if not (x_low < x_high and y_low < y_high):
         print("invalid coordinates.")
         sys.exit(1)
+    return fixed, x_low, x_high, y_low, y_high
 
+
+if __name__ == '__main__':
+    fixed, x_low, x_high, y_low, y_high = command_line_dialogue()
     track(fixed, x_low, x_high, y_low, y_high, 18.)
