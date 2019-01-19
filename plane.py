@@ -2,7 +2,7 @@ import time
 from typing import Dict
 from collections import deque
 import numpy as np
-from kalman import KalmanFilter
+#from kalman import KalmanFilter
 
 
 class Plane(object):
@@ -17,6 +17,8 @@ class Plane(object):
         #self.kalman_filter = KalmanFilter(1e-4, .04**2) # measured .04 stddev
 
     def set_colour(self):
+        if not self.Type:
+            return
         if self.Type.startswith("A38"):
             self.colour = (0., .99)
         elif self.Type.startswith("B74"):

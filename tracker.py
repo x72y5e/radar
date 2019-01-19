@@ -74,7 +74,7 @@ def display_to_console(current_ac: Dict[str, Plane]) -> None:
         print()
 
 
-def track(fixed_points: List[List[float, float]],
+def track(fixed_points: List[Tuple[float, float]],
           lat_min: float, lat_max: float, long_min: float, long_max: float,
           r: float = 25.):
     """
@@ -86,11 +86,13 @@ def track(fixed_points: List[List[float, float]],
     :param long_max: maximum longitude to use for display grid
     :return: None
     """
-    lat, long = (x_high - x_low) / 2, (y_high - y_low) / 2
+    lat, long = x_low + (x_high - x_low) / 2, y_low + (y_high - y_low) / 2
     print("getting data...")
+    print(lat, long, r)
     url = "https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json?lat={}&lng={}&fDstL=0&fDstU={}".format(
         lat, long, r)
     current_ac = {}
+
     # add fixed point(s)
     for i, (x, y) in enumerate(fixed_points):
         current_ac["fixed" + str(i)] = Plane("fixed" + str(i),
@@ -127,35 +129,34 @@ def track(fixed_points: List[List[float, float]],
         time.sleep(2)
 
 
-def command_line_dialogue():
-    bleft = input("enter coordinate (in format lat, long) for bottom-left of the map: (or press enter for default) ")
-    tright = input("enter coordinate (in format lat, long) for top-right of the map: (or press enter for default)")
+def get_config_data():
+    # load config file - should be config.json in project root
+    try:
+        with open("config.json", "r") as f:
+            map_data = json.load(f)
 
-    fixed = []
-    while True:
-        fp = input("enter coordinates (in format lat, long) for any fixed point, or press enter to continue: ")
-        if fp:
-            fixed.append([float(x) for x in fp.split(",")])
-        else:
-            break
+            # check data format - should be float
+            assert type(map_data["bottom_left"][0]) == float
+            assert type(map_data["bottom_left"][1]) == float
+            assert type(map_data["top_right"][0]) == float
+            assert type(map_data["top_right"][1]) == float
+            r = float(map_data["range"])
+            fixed = list(filter(lambda x: type(x[0]) == float and type(x[1]) == float, map_data["fixed_points"]))
+            fixed = [tuple(coord) for coord in fixed]
+    except FileNotFoundError:
+        print("Please configure location and map data in a config.json.")
+        sys.exit(1)
 
-    if bleft and tright:
-        try:
-            x_low, y_low = [float(x) for x in bleft.split(",")]
-            x_high, y_high = [float(x) for x in tright.split(",")]
-        except Exception as e:
-            print("wrong format.\n", e)
-            sys.exit(1)
-    else:
-        x_low, x_high, y_low, y_high = 51.41, 51.53, -.7, -.24
+    x_low, y_low = map_data["bottom_left"]
+    x_high, y_high = map_data["top_right"]
 
     # check data is valid
     if not (x_low < x_high and y_low < y_high):
         print("invalid coordinates.")
         sys.exit(1)
-    return fixed, x_low, x_high, y_low, y_high
+    return fixed, x_low, x_high, y_low, y_high, r
 
 
 if __name__ == '__main__':
-    fixed, x_low, x_high, y_low, y_high = command_line_dialogue()
-    track(fixed, x_low, x_high, y_low, y_high, 18.)
+    fixed, x_low, x_high, y_low, y_high, r = get_config_data()
+    track(fixed, x_low, x_high, y_low, y_high, r)
