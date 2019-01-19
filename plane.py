@@ -18,6 +18,7 @@ class Plane(object):
 
     def set_colour(self):
         if not self.Type:
+            self.colour = (.15, .3)
             return
         if self.Type.startswith("A38"):
             self.colour = (0., .99)
