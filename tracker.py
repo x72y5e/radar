@@ -11,7 +11,7 @@ from plane import Plane
 try:
     import unicornhathd as u
 
-except ModuleNotFoundError:
+except ImportError:
     print("No unicorn hat found. Printing to console only.")
     u = 0
 
