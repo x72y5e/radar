@@ -62,16 +62,20 @@ def purge(planes: Dict[str, Plane]) -> Dict[str, Plane]:
                 or plane.Type == "static")}
 
 
-def display_to_console(current_ac: Dict[str, Plane]) -> None:
+def display_to_console(current_ac: Dict[str, Plane]):
     # current_ac is a dict in form {registration: Plane()}
     for p in [p for p in current_ac.values() if p.Type != "static"]:
-        print("From:", p.From)
-        print("To:", p.To)
-        print("Type:", p.Mdl) #p.Type)
-        print("Operator:", p.Op)
-        print("Altitude:", p.Alt)
-        print("Last Info:", round(time.time() - p.last_seen, 2), "seconds ago")
-        print()
+        try:
+            print("From:", p.From)
+            print("To:", p.To)
+            print("Type:", p.Mdl) #p.Type)
+            print("Operator:", p.Op)
+            print("Altitude:", p.Alt)
+            print("Last Info:", round(time.time() - p.last_seen, 2), "seconds ago")
+            print()
+        except UnicodeEncodeError as e:
+            print(e)
+            continue
 
 
 def track(fixed_points: List[Tuple[float, float]],
